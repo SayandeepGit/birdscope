@@ -1,0 +1,41 @@
+name: Bird of the Day
+
+on:
+  schedule:
+    # 02:00 UTC = 07:30 IST
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  bird-of-the-day:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./bot
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: bot/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Post Bird of the Day
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BIRDSCOPE_BASE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          DEFAULT_LOCATION: ${{ vars.DEFAULT_LOCATION || 'Kolkata, West Bengal, India' }}
+          DEFAULT_RADIUS_KM: ${{ vars.DEFAULT_RADIUS_KM || '25' }}
+          LOG_LEVEL: INFO
+        run: python -m app.bird_of_the_day

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BirdScope — Discover the birds around you</title>
+  <meta name="description" content="Find bird species near any place on Earth. Explore photos, facts, conservation status, seasonal activity, and a live sightings map powered by iNaturalist and Wikipedia.">
+  <meta name="theme-color" content="#1F5E4B">
+  <script>
+    (() => {
+      try {
+        const stored = localStorage.getItem("bs:theme");
+        document.documentElement.dataset.theme =
+          stored === "dark" || stored === "light"
+            ? stored
+            : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      } catch {
+        /* use the default light theme */
+      }
+    })();
+  </script>
+  <meta property="og:title" content="BirdScope — Discover the birds around you">
+  <meta property="og:description" content="A location-aware field guide. See which birds have been spotted near you, with photos, facts, and seasonal activity.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#view">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#/" aria-label="BirdScope home">
+        <img src="assets/logo.svg" alt="" width="36" height="36">
+        <span class="brand-name">BirdScope</span>
+      </a>
+
+      <nav class="site-nav" aria-label="Primary">
+        <a href="#/" data-explore-link>Explore</a>
+        <a href="#/favorites">Favorites <span class="nav-count" id="favorites-count" hidden></span></a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark mode">
+          <span data-theme-icon aria-hidden="true"></span>
+        </button>
+        <a class="icon-button" id="repo-link" href="https://github.com/" target="_blank" rel="noopener" aria-label="View source on GitHub">
+          <span data-github-icon aria-hidden="true"></span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="view" tabindex="-1">
+    <div class="boot" role="status" aria-live="polite">
+      <span class="boot-mark" aria-hidden="true"></span>
+      <p>Opening the field guide…</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="#/" aria-label="BirdScope home">
+          <img src="assets/logo.svg" alt="" width="34" height="34">
+          <span class="brand-name">BirdScope</span>
+        </a>
+        <p>Bird sightings, field-guide facts, and a map — for wherever you are.</p>
+      </div>
+      <div class="footer-col">
+        <h2>Data</h2>
+        <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a>
+        <a href="https://www.wikipedia.org" target="_blank" rel="noopener">Wikipedia</a>
+        <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+      </div>
+      <div class="footer-col">
+        <h2>Project</h2>
+        <a href="#/">Explore</a>
+        <a href="#/favorites">Favorites</a>
+        <a id="footer-repo" href="https://github.com/" target="_blank" rel="noopener">Source code</a>
+        <a href="https://www.inaturalist.org/pages/help" target="_blank" rel="noopener">Data notes</a>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>© <span id="year"></span> BirdScope. Bird photos and observations belong to their contributors.</p>
+      <p>Made for curious birders.</p>
+    </div>
+  </footer>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
+    <button class="lightbox-close" type="button" data-lightbox-close aria-label="Close photo viewer">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <button class="lightbox-nav lightbox-prev" type="button" data-lightbox-prev aria-label="Previous photo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <figure class="lightbox-figure">
+      <img id="lightbox-img" alt="">
+      <figcaption id="lightbox-caption"></figcaption>
+    </figure>
+    <button class="lightbox-nav lightbox-next" type="button" data-lightbox-next aria-label="Next photo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+
+  <noscript>
+    <div class="noscript">BirdScope needs JavaScript to look up birds and show photos. Please enable it and reload.</div>
+  </noscript>
+</body>
+</html>

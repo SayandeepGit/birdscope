@@ -1,0 +1,1 @@
+"""BirdScope bot application package."""

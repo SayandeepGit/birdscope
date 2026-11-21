@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="No bird photo available">
+  <rect width="800" height="600" fill="#EFE9DB"/>
+  <circle cx="400" cy="258" r="126" fill="#DCEBE2"/>
+  <g transform="translate(292 168) scale(1.35)">
+    <path d="M52 78c0-16 13-29 29-29 8 0 15 3 20 8 5-5 12-8 20-8 16 0 29 13 29 29 0 8-3 15-9 20 4 4 6 10 6 16 0 17-14 31-31 31-11 0-20-5-26-13-6 8-15 13-26 13-17 0-31-14-31-31 0-6 2-12 6-16-6-5-9-12-9-20Z" fill="#7A877D" opacity=".35"/>
+    <path d="M92 74c15-9 31-10 48-2-8 14-22 21-42 22Z" fill="#7A877D"/>
+    <circle cx="129" cy="70" r="7" fill="#7A877D"/>
+    <path d="m135 68 18 5-18 7Z" fill="#7A877D"/>
+    <path d="M65 111c-13 8-24 18-33 31 15 1 28-4 40-15Z" fill="#7A877D"/>
+  </g>
+  <text x="400" y="438" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="30" fill="#7A877D">No photo yet</text>
+  <text x="400" y="474" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#9AA59C">A photo will appear when one is available</text>
+</svg>
