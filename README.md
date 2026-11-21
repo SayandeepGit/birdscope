@@ -4,7 +4,7 @@ BirdScope is a location-aware birdwatching field guide. Search any place on Eart
 
 ## Live site
 
-**https://YOURNAME.github.io/birdscope**
+**https://sayandeepgit.github.io/birdscope**
 
 ## Features
 
