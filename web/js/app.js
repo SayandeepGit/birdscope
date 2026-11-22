@@ -2,6 +2,7 @@ import { icon } from "./icons.js";
 import { addRoute, navigate, setNotFound, start } from "./router.js";
 import { getFavorites, getLastLocation, getTheme, setTheme } from "./storage.js";
 import { emptyState } from "./ui.js";
+import { parseLocation } from "./utils.js";
 import { renderExplore } from "./views/explore.js";
 import { renderFavorites } from "./views/favorites.js";
 import { renderHome } from "./views/home.js";
@@ -53,6 +54,35 @@ function renderNotFound(container) {
     </div>`;
 }
 
+function handleShareTarget() {
+  // Handle share target: /explore?title=...&text=...&url=...
+  const urlParams = new URLSearchParams(window.location.search);
+  const title = urlParams.get("title") || urlParams.get("name") || "";
+  const text = urlParams.get("text") || urlParams.get("q") || "";
+  const sharedUrl = urlParams.get("url") || "";
+
+  const query = text || title || sharedUrl;
+  if (query) {
+    // Pre-fill the search and navigate to explore
+    setTimeout(() => {
+      navigate("/explore", { name: query });
+    }, 0);
+  }
+}
+
+function handleProtocolHandler() {
+  // Handle web+birdscope: protocol
+  // This is triggered when the app is launched via protocol
+  // The location is passed in the URL hash or search
+  const hash = window.location.hash;
+  if (hash.startsWith("#/explore")) {
+    const location = parseLocation(new URLSearchParams(hash.split("?")[1] || ""));
+    if (location) {
+      navigate("/explore", location);
+    }
+  }
+}
+
 function init() {
   const storedTheme = getTheme();
   const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -92,6 +122,10 @@ function init() {
     if (event.key === "bs:favorites:v1") updateFavoritesCount();
   });
   updateFavoritesCount();
+
+  // Handle share target and protocol handler on load
+  handleShareTarget();
+  handleProtocolHandler();
 
   addRoute("/", renderHome);
   addRoute("/explore", renderExplore);

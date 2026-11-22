@@ -3,6 +3,7 @@
 
 const CACHE_NAME = 'birdscope-v1';
 const BASE_PATH = '/birdscope'; // GitHub Pages repo name
+const MAX_CACHE_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 const STATIC_ASSETS = [
   BASE_PATH + '/',
@@ -49,9 +50,43 @@ const API_ORIGINS = [
   'https://{s}.tile.openstreetmap.org'
 ];
 
+// Offline fallback page
+const OFFLINE_HTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BirdScope - Offline</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #F6F1E7; color: #1D2A23; 
+           display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 24px; }
+    .card { max-width: 400px; padding: 40px; text-align: center; background: #FFFDF8; 
+            border-radius: 24px; box-shadow: 0 24px 70px rgba(35,48,40,0.12); }
+    h1 { font-family: Georgia, serif; font-size: 2rem; margin: 0 0 12px; }
+    p { color: #5C6B62; line-height: 1.6; }
+    button { margin-top: 20px; padding: 12px 24px; background: #1F5E4B; color: #FFFDF8; 
+             border: none; border-radius: 999px; font-weight: 650; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🐦 You're Offline</h1>
+    <p>BirdScope works offline for cached content. Connect to search new locations or load fresh data.</p>
+    <button onclick="window.location.reload()">Try Again</button>
+  </div>
+</body>
+</html>
+`;
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      cache.put(new Request(BASE_PATH + '/offline.html'), new Response(OFFLINE_HTML, {
+        headers: { 'Content-Type': 'text/html' }
+      }));
+      return cache.addAll(STATIC_ASSETS);
+    })
   );
   self.skipWaiting();
 });
@@ -100,7 +135,7 @@ async function cacheFirstThenNetwork(request) {
   } catch {
     // Return offline fallback for navigation requests
     if (request.mode === 'navigate') {
-      return caches.match(BASE_PATH + '/index.html');
+      return caches.match(BASE_PATH + '/offline.html');
     }
     throw new Error('Offline');
   }
@@ -111,12 +146,35 @@ async function networkFirstThenCache(request) {
     const response = await fetch(request);
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      // Add timestamp for cache expiration
+      const responseToCache = response.clone();
+      const headers = new Headers(responseToCache.headers);
+      headers.set('sw-cached-at', Date.now().toString());
+      const cachedResponse = new Response(await responseToCache.blob(), {
+        status: responseToCache.status,
+        statusText: responseToCache.statusText,
+        headers
+      });
+      cache.put(request, cachedResponse);
     }
     return response;
   } catch {
     const cached = await caches.match(request);
-    if (cached) return cached;
+    if (cached) {
+      // Check cache age
+      const cachedAt = cached.headers.get('sw-cached-at');
+      if (cachedAt && Date.now() - parseInt(cachedAt) > MAX_CACHE_AGE) {
+        // Too old, but return it anyway with a warning header
+        const response = new Response(await cached.blob(), {
+          status: cached.status,
+          statusText: cached.statusText,
+          headers: cached.headers
+        });
+        response.headers.set('x-cache-warning', 'stale');
+        return response;
+      }
+      return cached;
+    }
     return new Response(JSON.stringify({ error: 'Offline' }), {
       status: 503,
       headers: { 'Content-Type': 'application/json' },
@@ -124,7 +182,7 @@ async function networkFirstThenCache(request) {
   }
 }
 
-// Background sync for favorite changes (optional enhancement)
+// Background sync for favorite changes
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-favorites') {
     event.waitUntil(syncFavorites());
@@ -135,3 +193,52 @@ async function syncFavorites() {
   // Could sync localStorage favorites to a backend here if needed
   console.log('Background sync: favorites');
 }
+
+// Periodic background sync (if supported)
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'update-species-cache') {
+    event.waitUntil(updateSpeciesCache());
+  }
+});
+
+async function updateSpeciesCache() {
+  console.log('Periodic sync: updating species cache');
+  // Could pre-fetch popular locations here
+}
+
+// Push notification handling (registration only - actual push needs backend)
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  const data = event.data.json();
+  const options = {
+    body: data.body || 'New bird sighting near you!',
+    icon: BASE_PATH + '/assets/icons/icon-192.png',
+    badge: BASE_PATH + '/assets/icons/icon-72.png',
+    vibrate: [100, 50, 100],
+    data: data.data || {},
+    actions: [
+      { action: 'open', title: 'Open BirdScope' },
+      { action: 'dismiss', title: 'Dismiss' }
+    ]
+  };
+  event.waitUntil(self.registration.showNotification(data.title || 'BirdScope', options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  if (event.action === 'open') {
+    event.waitUntil(clients.openWindow(BASE_PATH + '/'));
+  }
+});
+
+// Message handling for cache management
+self.addEventListener('message', (event) => {
+  if (event.data === 'skipWaiting') {
+    self.skipWaiting();
+  }
+  if (event.data === 'clearCache') {
+    event.waitUntil(caches.delete(CACHE_NAME));
+  }
+});
+
+console.log('BirdScope Service Worker v1 loaded');

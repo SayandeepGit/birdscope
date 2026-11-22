@@ -9,6 +9,8 @@
   "theme_color": "#1F5E4B",
   "orientation": "portrait-primary",
   "scope": ".",
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
       "src": "assets/icons/icon-72.png",
@@ -87,6 +89,27 @@
       "type": "image/png",
       "form_factor": "wide",
       "label": "Species detail with taxonomy, conservation, and seasonality chart"
+    },
+    {
+      "src": "assets/screenshots/home.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "BirdScope home page on mobile"
+    },
+    {
+      "src": "assets/screenshots/explore.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Species list on mobile"
+    },
+    {
+      "src": "assets/screenshots/species.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Species detail on mobile"
     }
   ],
   "shortcuts": [
@@ -108,5 +131,23 @@
   "prefer_related_applications": false,
   "launch_handler": {
     "client_mode": "focus-existing"
-  }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+birdscope",
+      "url": "#/explore?location=%s"
+    }
+  ],
+  "share_target": {
+    "action": "#/explore",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "name",
+      "text": "q",
+      "url": "url"
+    }
+  },
+  "related_applications": [],
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-17d8db7f28c7"
 }
