@@ -2,12 +2,13 @@
   "name": "BirdScope",
   "short_name": "BirdScope",
   "description": "Discover the birds around you. A location-aware field guide with species lists, photos, facts, and seasonal activity.",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#F6F1E7",
   "theme_color": "#1F5E4B",
   "orientation": "portrait-primary",
-  "scope": "/",
+  "scope": ".",
   "icons": [
     {
       "src": "assets/icons/icon-72.png",
@@ -56,25 +57,56 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["education", "reference", "travel"],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "assets/screenshots/home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "BirdScope home page with location search"
+    },
+    {
+      "src": "assets/screenshots/explore.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Species list for Kolkata with photos and counts"
+    },
+    {
+      "src": "assets/screenshots/species.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Species detail with taxonomy, conservation, and seasonality chart"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Explore Birds",
       "short_name": "Explore",
       "description": "Search for birds near a location",
       "url": "#/",
-      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192", "purpose": "any" }]
     },
     {
       "name": "My Favorites",
       "short_name": "Favorites",
       "description": "View your saved birds",
       "url": "#/favorites",
-      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192", "purpose": "any" }]
     }
   ],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
 }

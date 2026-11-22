@@ -1,27 +1,39 @@
 // BirdScope Service Worker - Cache-first strategy for static assets, network-first for API calls
+// Works on GitHub Pages subdirectory: https://sayandeepgit.github.io/birdscope/
 
 const CACHE_NAME = 'birdscope-v1';
+const BASE_PATH = '/birdscope'; // GitHub Pages repo name
+
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/404.html',
-  '/manifest.json',
-  '/assets/logo.svg',
-  '/assets/favicon.svg',
-  '/assets/bird-placeholder.svg',
-  '/css/styles.css',
-  '/js/app.js',
-  '/js/api.js',
-  '/js/icons.js',
-  '/js/router.js',
-  '/js/storage.js',
-  '/js/ui.js',
-  '/js/utils.js',
-  '/js/components/species-card.js',
-  '/js/views/home.js',
-  '/js/views/explore.js',
-  '/js/views/species.js',
-  '/js/views/favorites.js',
+  BASE_PATH + '/',
+  BASE_PATH + '/index.html',
+  BASE_PATH + '/404.html',
+  BASE_PATH + '/manifest.json',
+  BASE_PATH + '/assets/logo.svg',
+  BASE_PATH + '/assets/favicon.svg',
+  BASE_PATH + '/assets/bird-placeholder.svg',
+  BASE_PATH + '/assets/icons/icon-72.png',
+  BASE_PATH + '/assets/icons/icon-96.png',
+  BASE_PATH + '/assets/icons/icon-128.png',
+  BASE_PATH + '/assets/icons/icon-144.png',
+  BASE_PATH + '/assets/icons/icon-152.png',
+  BASE_PATH + '/assets/icons/icon-192.png',
+  BASE_PATH + '/assets/icons/icon-384.png',
+  BASE_PATH + '/assets/icons/icon-512.png',
+  BASE_PATH + '/assets/icons/icon-512-maskable.png',
+  BASE_PATH + '/css/styles.css',
+  BASE_PATH + '/js/app.js',
+  BASE_PATH + '/js/api.js',
+  BASE_PATH + '/js/icons.js',
+  BASE_PATH + '/js/router.js',
+  BASE_PATH + '/js/storage.js',
+  BASE_PATH + '/js/ui.js',
+  BASE_PATH + '/js/utils.js',
+  BASE_PATH + '/js/components/species-card.js',
+  BASE_PATH + '/js/views/home.js',
+  BASE_PATH + '/js/views/explore.js',
+  BASE_PATH + '/js/views/species.js',
+  BASE_PATH + '/js/views/favorites.js',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&display=swap'
@@ -88,7 +100,7 @@ async function cacheFirstThenNetwork(request) {
   } catch {
     // Return offline fallback for navigation requests
     if (request.mode === 'navigate') {
-      return caches.match('/index.html');
+      return caches.match(BASE_PATH + '/index.html');
     }
     throw new Error('Offline');
   }
