@@ -23,6 +23,10 @@
   <meta property="og:description" content="A location-aware field guide. See which birds have been spotted near you, with photos, facts, and seasonal activity.">
   <meta property="og:type" content="website">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1F5E4B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101713" media="(prefers-color-scheme: dark)">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&display=swap" rel="stylesheet">
@@ -115,5 +119,17 @@
   <noscript>
     <div class="noscript">BirdScope needs JavaScript to look up birds and show photos. Please enable it and reload.</div>
   </noscript>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+          console.log('Service Worker registered:', reg.scope);
+        }).catch((err) => {
+          console.log('Service Worker registration failed:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
