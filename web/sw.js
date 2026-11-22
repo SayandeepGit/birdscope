@@ -4,6 +4,12 @@
 const CACHE_NAME = 'birdscope-v1';
 const BASE_PATH = '/birdscope'; // GitHub Pages repo name
 const MAX_CACHE_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
+const CACHE_STRATEGIES = {
+  STATIC: 'cache-first',
+  API: 'network-first',
+  IMAGES: 'cache-first',
+  FONTS: 'cache-first'
+};
 
 const STATIC_ASSETS = [
   BASE_PATH + '/',
@@ -48,6 +54,17 @@ const API_ORIGINS = [
   'https://static.inaturalist.org',
   'https://inaturalist-open-data.s3.amazonaws.com',
   'https://{s}.tile.openstreetmap.org'
+];
+
+const IMAGE_ORIGINS = [
+  'https://static.inaturalist.org',
+  'https://inaturalist-open-data.s3.amazonaws.com',
+  'https://{s}.tile.openstreetmap.org'
+];
+
+const FONT_ORIGINS = [
+  'https://fonts.googleapis.com',
+  'https://fonts.gstatic.com'
 ];
 
 // Offline fallback page
@@ -98,6 +115,12 @@ self.addEventListener('activate', (event) => {
     )
   );
   self.clients.claim();
+  
+  // Register background sync
+  registerBackgroundSync();
+  
+  // Register periodic background sync
+  registerPeriodicBackgroundSync();
 });
 
 self.addEventListener('fetch', (event) => {
@@ -110,18 +133,31 @@ self.addEventListener('fetch', (event) => {
   // Skip chrome-extension, data:, blob: URLs
   if (!url.protocol.startsWith('http')) return;
 
-  // API calls - network first, cache fallback
+  // Determine cache strategy
   const isApiCall = API_ORIGINS.some((origin) => url.origin === origin || url.origin.endsWith(origin.replace('https://', '')));
+  const isImage = IMAGE_ORIGINS.some((origin) => url.origin === origin || url.origin.endsWith(origin.replace('https://', '')));
+  const isFont = FONT_ORIGINS.some((origin) => url.origin === origin);
+
   if (isApiCall) {
     event.respondWith(networkFirstThenCache(request));
     return;
   }
 
+  if (isImage) {
+    event.respondWith(cacheFirstThenNetwork(request, 'images'));
+    return;
+  }
+
+  if (isFont) {
+    event.respondWith(cacheFirstThenNetwork(request, 'fonts'));
+    return;
+  }
+
   // Static assets - cache first
-  event.respondWith(cacheFirstThenNetwork(request));
+  event.respondWith(cacheFirstThenNetwork(request, 'static'));
 });
 
-async function cacheFirstThenNetwork(request) {
+async function cacheFirstThenNetwork(request, cacheType = 'static') {
   const cached = await caches.match(request);
   if (cached) return cached;
 
@@ -129,13 +165,26 @@ async function cacheFirstThenNetwork(request) {
     const response = await fetch(request);
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      const responseToCache = response.clone();
+      const headers = new Headers(responseToCache.headers);
+      headers.set('sw-cached-at', Date.now().toString());
+      headers.set('sw-cache-type', cacheType);
+      const cachedResponse = new Response(await responseToCache.blob(), {
+        status: responseToCache.status,
+        statusText: responseToCache.statusText,
+        headers
+      });
+      cache.put(request, cachedResponse);
     }
     return response;
   } catch {
     // Return offline fallback for navigation requests
     if (request.mode === 'navigate') {
       return caches.match(BASE_PATH + '/offline.html');
+    }
+    // For images, return placeholder
+    if (request.destination === 'image') {
+      return caches.match(BASE_PATH + '/assets/bird-placeholder.svg');
     }
     throw new Error('Offline');
   }
@@ -146,10 +195,10 @@ async function networkFirstThenCache(request) {
     const response = await fetch(request);
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME);
-      // Add timestamp for cache expiration
       const responseToCache = response.clone();
       const headers = new Headers(responseToCache.headers);
       headers.set('sw-cached-at', Date.now().toString());
+      headers.set('sw-cache-type', 'api');
       const cachedResponse = new Response(await responseToCache.blob(), {
         status: responseToCache.status,
         statusText: responseToCache.statusText,
@@ -161,10 +210,8 @@ async function networkFirstThenCache(request) {
   } catch {
     const cached = await caches.match(request);
     if (cached) {
-      // Check cache age
       const cachedAt = cached.headers.get('sw-cached-at');
       if (cachedAt && Date.now() - parseInt(cachedAt) > MAX_CACHE_AGE) {
-        // Too old, but return it anyway with a warning header
         const response = new Response(await cached.blob(), {
           status: cached.status,
           statusText: cached.statusText,
@@ -175,10 +222,39 @@ async function networkFirstThenCache(request) {
       }
       return cached;
     }
-    return new Response(JSON.stringify({ error: 'Offline' }), {
+    return new Response(JSON.stringify({ error: 'Offline', cached: false }), {
       status: 503,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+}
+
+// Background sync registration
+async function registerBackgroundSync() {
+  if ('sync' in self.registration) {
+    try {
+      await self.registration.sync.register('sync-favorites');
+      console.log('Background sync registered: sync-favorites');
+    } catch (err) {
+      console.log('Background sync registration failed:', err);
+    }
+  }
+}
+
+// Periodic background sync registration
+async function registerPeriodicBackgroundSync() {
+  if ('periodicSync' in self.registration) {
+    try {
+      const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+      if (status.state === 'granted') {
+        await self.registration.periodicSync.register('update-species-cache', {
+          minInterval: 24 * 60 * 60 * 1000 // 24 hours
+        });
+        console.log('Periodic background sync registered: update-species-cache');
+      }
+    } catch (err) {
+      console.log('Periodic background sync registration failed:', err);
+    }
   }
 }
 
@@ -192,6 +268,9 @@ self.addEventListener('sync', (event) => {
 async function syncFavorites() {
   // Could sync localStorage favorites to a backend here if needed
   console.log('Background sync: favorites');
+  // Notify clients
+  const clients = await self.clients.matchAll();
+  clients.forEach(client => client.postMessage({ type: 'favorites-synced' }));
 }
 
 // Periodic background sync (if supported)
@@ -203,10 +282,27 @@ self.addEventListener('periodicsync', (event) => {
 
 async function updateSpeciesCache() {
   console.log('Periodic sync: updating species cache');
-  // Could pre-fetch popular locations here
+  // Pre-fetch popular locations
+  const popularLocations = [
+    { lat: 22.56263, lng: 88.36304, name: 'Kolkata' },
+    { lat: 47.60621, lng: -122.33207, name: 'Seattle' },
+    { lat: 51.5074, lng: -0.1278, name: 'London' }
+  ];
+  
+  for (const loc of popularLocations) {
+    try {
+      await fetch(`https://api.inaturalist.org/v1/observations/species_counts?lat=${loc.lat}&lng=${loc.lng}&radius=25&taxon_id=3&quality_grade=research&per_page=10&order=desc&order_by=count`);
+    } catch (e) {
+      console.log('Pre-fetch failed for', loc.name, e);
+    }
+  }
+  
+  // Notify clients
+  const clients = await self.clients.matchAll();
+  clients.forEach(client => client.postMessage({ type: 'species-cache-updated' }));
 }
 
-// Push notification handling (registration only - actual push needs backend)
+// Push notification handling
 self.addEventListener('push', (event) => {
   if (!event.data) return;
   const data = event.data.json();
@@ -219,26 +315,97 @@ self.addEventListener('push', (event) => {
     actions: [
       { action: 'open', title: 'Open BirdScope' },
       { action: 'dismiss', title: 'Dismiss' }
-    ]
+    ],
+    requireInteraction: true,
+    tag: 'birdscope-notification'
   };
   event.waitUntil(self.registration.showNotification(data.title || 'BirdScope', options));
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  if (event.action === 'open') {
+  if (event.action === 'open' || !event.action) {
     event.waitUntil(clients.openWindow(BASE_PATH + '/'));
   }
 });
 
-// Message handling for cache management
+self.addEventListener('notificationclose', (event) => {
+  console.log('Notification closed:', event.notification.tag);
+});
+
+// Message handling for cache management and client communication
 self.addEventListener('message', (event) => {
+  if (!event.data) return;
+  
   if (event.data === 'skipWaiting') {
     self.skipWaiting();
   }
+  
   if (event.data === 'clearCache') {
     event.waitUntil(caches.delete(CACHE_NAME));
   }
+  
+  if (event.data === 'getCacheStats') {
+    getCacheStats().then(stats => {
+      event.ports[0].postMessage({ type: 'cacheStats', stats });
+    });
+  }
+  
+  if (event.data === 'registerSync') {
+    registerBackgroundSync().then(() => {
+      event.ports[0].postMessage({ type: 'syncRegistered' });
+    });
+  }
+  
+  if (event.data === 'requestNotificationPermission') {
+    self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(event.data.vapidKey)
+    }).then(subscription => {
+      event.ports[0].postMessage({ type: 'pushSubscription', subscription });
+    }).catch(err => {
+      event.ports[0].postMessage({ type: 'pushError', error: err.message });
+    });
+  }
 });
 
-console.log('BirdScope Service Worker v1 loaded');
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function getCacheStats() {
+  const cache = await caches.open(CACHE_NAME);
+  const keys = await cache.keys();
+  let totalSize = 0;
+  for (const request of keys) {
+    const response = await cache.match(request);
+    if (response) {
+      const blob = await response.blob();
+      totalSize += blob.size;
+    }
+  }
+  return { count: keys.length, size: totalSize };
+}
+
+// File handling support (for file_handlers in manifest)
+self.addEventListener('filehandler', (event) => {
+  event.files.forEach(file => {
+    console.log('File handler received:', file.name, file.type);
+    // Could process CSV/JSON files with bird data here
+  });
+});
+
+// Window controls overlay support
+self.addEventListener('windowcontrolsoverlay', (event) => {
+  // Handle window controls overlay geometry changes
+  console.log('Window controls overlay geometry:', event.geometry);
+});
+
+console.log('BirdScope Service Worker v2 loaded - Full PWA capabilities enabled');

@@ -352,6 +352,35 @@ main {
 }
 
 /* ============================================================
+   Window Controls Overlay (for installed PWA)
+   ============================================================ */
+
+@media (display-mode: standalone) {
+  :root {
+    --titlebar-area-width: 0;
+  }
+  
+  .site-header {
+    padding-right: calc(var(--titlebar-area-width) + 16px);
+  }
+  
+  .header-inner {
+    padding-left: env(titlebar-area-x, 0);
+    padding-right: env(titlebar-area-width, 0);
+  }
+  
+  .titlebar-area {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: env(titlebar-area-width, 0);
+    height: env(titlebar-area-height, 0);
+    background: transparent;
+    z-index: 100;
+  }
+}
+
+/* ============================================================
    Buttons, inputs, badges
    ============================================================ */
 

@@ -4,7 +4,7 @@
   "description": "Discover the birds around you. A location-aware field guide with species lists, photos, facts, and seasonal activity.",
   "start_url": ".",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "fullscreen"],
   "background_color": "#F6F1E7",
   "theme_color": "#1F5E4B",
   "orientation": "portrait-primary",
@@ -67,7 +67,7 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["education", "reference", "travel"],
+  "categories": ["education", "reference", "travel", "lifestyle"],
   "screenshots": [
     {
       "src": "assets/screenshots/home.png",
@@ -126,11 +126,19 @@
       "description": "View your saved birds",
       "url": "#/favorites",
       "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192", "purpose": "any" }]
+    },
+    {
+      "name": "Bird of the Day",
+      "short_name": "BOTD",
+      "description": "View today's featured bird",
+      "url": "#/explore?botd=true",
+      "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192", "purpose": "any" }]
     }
   ],
   "prefer_related_applications": false,
   "launch_handler": {
-    "client_mode": "focus-existing"
+    "client_mode": "focus-existing",
+    "target_client": "auto"
   },
   "protocol_handlers": [
     {
@@ -148,6 +156,18 @@
       "url": "url"
     }
   },
+  "file_handlers": [
+    {
+      "action": "#/explore",
+      "accept": {
+        "text/csv": [".csv"],
+        "application/json": [".json"]
+      }
+    }
+  ],
   "related_applications": [],
-  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-17d8db7f28c7"
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-17d8db7f28c7",
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }
