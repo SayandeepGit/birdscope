@@ -1,4 +1,5 @@
 {
+  "id": "birdscope",
   "name": "BirdScope",
   "short_name": "BirdScope",
   "description": "Discover the birds around you. A location-aware field guide with species lists, photos, facts, and seasonal activity.",
@@ -9,6 +10,14 @@
   "theme_color": "#1F5E4B",
   "orientation": "portrait-primary",
   "scope": ".",
+  "scope_extensions": [
+    {
+      "scope": "/birdscope/"
+    },
+    {
+      "scope": "https://sayandeepgit.github.io/birdscope/"
+    }
+  ],
   "lang": "en",
   "dir": "ltr",
   "icons": [
@@ -91,21 +100,21 @@
       "label": "Species detail with taxonomy, conservation, and seasonality chart"
     },
     {
-      "src": "assets/screenshots/home.png",
+      "src": "assets/screenshots/home-narrow.png",
       "sizes": "750x1334",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "BirdScope home page on mobile"
     },
     {
-      "src": "assets/screenshots/explore.png",
+      "src": "assets/screenshots/explore-narrow.png",
       "sizes": "750x1334",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Species list on mobile"
     },
     {
-      "src": "assets/screenshots/species.png",
+      "src": "assets/screenshots/species-narrow.png",
       "sizes": "750x1334",
       "type": "image/png",
       "form_factor": "narrow",
@@ -136,6 +145,7 @@
     }
   ],
   "prefer_related_applications": false,
+  "related_applications": [],
   "launch_handler": {
     "client_mode": "focus-existing",
     "target_client": "auto"
@@ -165,7 +175,6 @@
       }
     }
   ],
-  "related_applications": [],
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-17d8db7f28c7",
   "edge_side_panel": {
     "preferred_width": 400
